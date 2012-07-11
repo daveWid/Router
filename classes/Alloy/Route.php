@@ -8,7 +8,7 @@ namespace Alloy;
  * @link http://alloyframework.com/
  * @license http://www.opensource.org/licenses/bsd-license.php
  */
-class Router_Route
+class Route
 {
     protected $_name;
     protected $_route; // Stored route as entered by user

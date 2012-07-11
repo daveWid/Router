@@ -26,7 +26,7 @@ class Router
      */
     public function route($name, $route, array $defaults = array())
     {
-        $route = new Router_Route($route);
+        $route = new Route($route);
         $this->_routes[$name] = $route->name($name);
         return $route;
     }
@@ -96,7 +96,7 @@ class Router
     /**
      * Match URL against a specific given route
      */
-    protected function routeMatch(Router_Route $route, $method, $url)
+    protected function routeMatch(Route $route, $method, $url)
     {
         $params = array();
         
