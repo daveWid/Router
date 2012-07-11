@@ -1,3 +1,6 @@
 {
-	"name": "alloy/router"
+	"name": "alloy/router",
+	"autoload": {
+		"psr-0": { "Alloy": "classes/" }
+	}
 }
