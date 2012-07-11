@@ -5,7 +5,7 @@
 class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 {
 	public $router;
-	
+
     public function setUp()
     {
         parent::setUp();
@@ -64,20 +64,17 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
         
         $this->assertEquals("blog/2009/10/blog-post-title", $url);
     }
-    
+
+	/**
+	 * @expectedException \UnexpectedValueException
+	 */
     public function testUrlBlogPostException()
     {
         $router = $this->router;
         $router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
         
-        try {
-            // Do not supply 'dir' or 'slug', expect exception to be raised
-            $url = $router->url(array('year' => 2009, 'month' => '10'), 'blog_post');
-        } catch(Exception $e) {
-            return;
-        }
-        
-        $this->fail("Expected exception, none raised.");
+		// Do not supply 'dir' or 'slug', expect exception to be raised
+		$url = $router->url(array('year' => 2009, 'month' => '10'), 'blog_post');
     }
     
     public function testUrlRemoveEscapeCharacters()
