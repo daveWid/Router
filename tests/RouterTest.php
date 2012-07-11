@@ -2,23 +2,21 @@
 /**
  * Alloy Router generic tests
  */
-class Test_Router extends \PHPUnit_Framework_TestCase
+class RouterTest extends \PHPUnit_Framework_TestCase
 {
+	public $router;
+
     public function setUp()
     {
         parent::setUp();
-        
-        $this->router = \Kernel()->router();
-        if($this->router instanceof \Alloy\Router) {
-            $this->router->reset();
-        }
+        $this->router = new \Alloy\Router;
     }
-    
+   
     public function testInstance()
     {
         $this->assertTrue($this->router instanceof \Alloy\Router);
     }
-    
+   
     public function testReset()
     {
         $this->assertEquals(0, count($this->router->routes()));

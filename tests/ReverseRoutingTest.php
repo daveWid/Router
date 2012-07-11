@@ -2,16 +2,14 @@
 /**
  * Alloy Router generic URL tests
  */
-class Test_Router_Url extends \PHPUnit_Framework_TestCase
+class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 {
+	public $router;
+	
     public function setUp()
     {
         parent::setUp();
-        
-        $this->router = \Kernel()->router();
-        if($this->router instanceof \Alloy\Router) {
-            $this->router->reset();
-        }
+        $this->router = new \Alloy\Router;
     }
     
     public function testInstance()
