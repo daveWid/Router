@@ -2,6 +2,8 @@
 
 namespace Alloy;
 
+use \Alloy\Router\Route as Route;
+
 /**
  * Router
  *
@@ -13,43 +15,59 @@ namespace Alloy;
  */
 class Router
 {
+	/**
+	 * @var array  Stored routes
+	 */
+	protected $routes = array();
 
-	// Store specified routes
-	protected $_routes = array();
-	protected $_matchedRouteName;
+	/**
+	 * @var string  The name of the matched route.
+	 */
+	protected $matchedRouteName;
 
 	/**
 	 * Connect route
 	 *
-	 * @param string $name Name of the route
-	 * @param string $route Route to match
-	 * @param optional array $defaults Array of key => value parameters to supply as defaults
+	 * @param  string $name          Name of the route
+	 * @param  string $route         Route to match
+	 * @param  array  $defaults      Array of key => value parameters to supply as defaults
+	 * @return \Alloy\Router\Route   The newly created route
 	 */
-	public function route($name, $route, array $defaults = array())
+	public function route($name, $route, array $defaults = null)
 	{
 		$route = new Route($route);
-		$this->_routes[$name] = $route->name($name);
+		$this->routes[$name] = $route->name($name);
+
+		if ($defaults !== null)
+		{
+			$route->defaults($defaults);
+		}
+
 		return $route;
 	}
 
 	/**
 	 * Get set routes
+	 *
+	 * @return array
 	 */
 	public function routes()
 	{
-		return $this->_routes;
+		return $this->routes;
 	}
 
 	/**
 	 * Match given URL string
 	 *
-	 * @param string $method HTTP Method to match for
-	 * @param string $url Request URL to match for
-	 * @return array $params Parameters with values that were matched
+	 * @throws \OutOfBoundsException  Exception thrown when no routes are defined.
+	 *
+	 * @param  string $method  HTTP Method to match for
+	 * @param  string $url     Request URL to match for
+	 * @return array  $params  Parameters with values that were matched
 	 */
 	public function match($method, $url)
 	{
-		if (count($this->routes()) == 0)
+		if (empty($this->routes))
 		{
 			throw new \OutOfBoundsException("There must be at least one route defined to match for.");
 		}
@@ -75,7 +93,7 @@ class Router
 					if (false === $cbr)
 					{
 						$params = array();
-						$this->_matchedRouteName = null;
+						$this->matchedRouteName = null;
 						continue;
 					}
 				}
@@ -118,7 +136,7 @@ class Router
 			}
 
 			// Store matched route name
-			$this->_matchedRouteName = $route->name();
+			$this->matchedRouteName = $route->name();
 
 			// Match params
 		}
@@ -128,7 +146,7 @@ class Router
 			if ($result)
 			{
 				// Store matched route name
-				$this->_matchedRouteName = $route->name();
+				$this->matchedRouteName = $route->name();
 
 				// Shift off first "match" result - full URL input string
 				array_shift($matches);
@@ -180,9 +198,9 @@ class Router
 	 */
 	public function matchedRoute()
 	{
-		if ($this->_matchedRouteName)
+		if ($this->matchedRouteName)
 		{
-			return $this->_routes[$this->_matchedRouteName];
+			return $this->routes[$this->matchedRouteName];
 		}
 		else
 		{
@@ -213,13 +231,13 @@ class Router
 			throw new \UnexpectedValueException("Error creating URL: Route name must be specified.");
 		}
 
-		if (!isset($this->_routes[$routeName]))
+		if (!isset($this->routes[$routeName]))
 		{
 			throw new \UnexpectedValueException("Error creating URL: Route name '" . $routeName . "' not found in defined routes.");
 		}
 
 		$routeUrl = "";
-		$route = $this->_routes[$routeName];
+		$route = $this->routes[$routeName];
 		$routeUrl = $route->route();
 
 		// Static routes - let's save some time here
@@ -292,7 +310,7 @@ class Router
 	 */
 	public function reset()
 	{
-		$this->_routes = array();
+		$this->routes = array();
 	}
 
 }

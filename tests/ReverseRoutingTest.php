@@ -5,7 +5,6 @@
  */
 class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 {
-
 	public $router;
 
 	public function setUp()
