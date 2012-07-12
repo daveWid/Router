@@ -74,10 +74,11 @@ class Route
 		if (strpos($route, '<') === false)
 		{
 			$this->isStatic = true;
+			$this->regex = Route\Parser::parseStatic($route);
 		}
 		else
 		{
-			$this->regex = '/^'.Route\Parser::parse($route).'$/';
+			$this->regex = Route\Parser::parse($route);
 		}
 	}
 
@@ -142,7 +143,7 @@ class Route
 	 */
 	public function regexp()
 	{
-		return $this->regexp;
+		return $this->regex;
 	}
 
 	/**

@@ -62,7 +62,17 @@ class Parser
 			}
 		}
 
-		return str_replace('/', '\/', $routeRegex);
+		return self::parseStatic($routeRegex);
+	}
+
+	/**
+	 * Parses a static route into a regex
+	 *
+	 * @return string
+	 */
+	public static function parseStatic($route)
+	{
+		return '/^'.str_replace('/', '\/', $route).'$/';
 	}
 
 	/**
