@@ -19,6 +19,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 		$this->assertTrue($this->router instanceof \Alloy\Router);
 	}
 
+	/**
+	 * @expectedException \OutOfBoundsException
+	 */
+	public function testMatchWithNoRoutesThrowsException()
+	{
+		$this->router->match('GET', "/failing/match");
+	}
+
 	public function testReset()
 	{
 		$this->assertEquals(0, count($this->router->routes()));
