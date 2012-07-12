@@ -1,6 +1,6 @@
 <?php
 
-namespace Alloy;
+namespace Alloy\Router;
 
 /**
  * Router Route
