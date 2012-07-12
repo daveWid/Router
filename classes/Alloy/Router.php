@@ -2,8 +2,6 @@
 
 namespace Alloy;
 
-use \Alloy\Router\Route as Route;
-
 /**
  * Router
  *
@@ -28,10 +26,10 @@ class Router
 	/**
 	 * Connect route
 	 *
-	 * @param  string $name          Name of the route
-	 * @param  string $route         Route to match
-	 * @param  array  $defaults      Array of key => value parameters to supply as defaults
-	 * @return \Alloy\Router\Route   The newly created route
+	 * @param  string $name      Name of the route
+	 * @param  string $route     Route to match
+	 * @param  array  $defaults  Array of key => value parameters to supply as defaults
+	 * @return \Alloy\Route      The newly created route
 	 */
 	public function route($name, $route, array $defaults = null)
 	{
