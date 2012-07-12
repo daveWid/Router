@@ -11,182 +11,91 @@ namespace Alloy;
  */
 class Route
 {
+	/**
+	 * @var string  The name of the route
+	 */
+	private $name = null;
 
-	protected $_name;
-	protected $_route; // Stored route as entered by user
-	protected $_isStatic = false;
-	protected $_regexp; // Stored compiled regexp for route
-	protected $_defaultParams = array();
-	protected $_namedParams = array();
-	protected $_optionalParams = array();
-	protected $_methodParams = array(
+	/**
+	 * @var string  The route as entered
+	 */
+	private $route = null;
+
+	/**
+	 * @var boolean Does this route need regex?
+	 */
+	private $isStatic = false;
+
+	/**
+	 * @var string  The compiled regex pattern
+	 */
+	private $regex = null;
+
+	/**
+	 * @var array   Default parameters
+	 */
+	private $defaultParams = array();
+
+	/**
+	 * @var array   Additional parameters for the different HTTP verbs
+	 */
+	private $methodParams = array(
 		'GET' => array(),
 		'POST' => array(),
 		'PUT' => array(),
 		'DELETE' => array()
 	);
-	// Regex to match route params by name
-	protected $_routeParamRegex = "\<[\:|\*|\#]([^\>]+)\>";
-	protected $_routeOptionalParamRegex = "\(([^\<]*)\<[\:|\*|\#]([^\>]+)\>([^\)]*)\)";
-	// Default regex match syntax to replace named keys with
-	protected $_paramRegex = "([a-zA-Z0-9\_\-\+\%\s]+)";
-	protected $_paramRegexNumeric = "([0-9]+)";
-	protected $_paramRegexWildcard = "(.*)";
-	// Callbacks
-	protected $_condition;
-	protected $_afterMatch;
+
+	/**
+	 * @var callable  A callback to make sure certian conditions are met
+	 */
+	private $condition = null;
+
+	/**
+	 * @var callable  An after hook for when a route is matched
+	 */
+	private $afterMatch = null;
 
 	/**
 	 * New router object
+	 *
+	 * @throws \DomainException  If the parser is not set
+	 *
+	 * @param  string $name      The name of the route
+	 * @param  string $route     The user supplied route
+	 * @param  array  $defaults  Any default parameters
 	 */
-	public function __construct($route)
+	public function __construct($name, $route, $defaults = array())
 	{
-		$routeRegex = null;
-		$routeParams = array();
-		$routeOptionalParams = array();
+		$this->name = $name;
+		$this->route = $route;
+		$this->defaultParams = $defaults;
 
-		// Remove leading and trailing backslashes if present (normalizes for matching)
-		$route = trim($route, '/');
-		$routeRegex = $route;
-
-		// Detect static routes to skip regex overhead
-		if (false === strpos($route, '<'))
+		if (strpos($route, '<') === false)
 		{
-			$this->isStatic(true);
+			$this->isStatic = true;
 		}
-
-		// No regex compile for static routes if we know ahead of time
-		if (!$this->isStatic())
+		else
 		{
-			// Extract optional named parameters from route
-			$regexOptionalMatches = array();
-			preg_match_all("@" . $this->_routeOptionalParamRegex . "@", $route, $regexOptionalMatches, PREG_SET_ORDER);
-			if (isset($regexOptionalMatches[0]) && count($regexOptionalMatches) > 0)
-			{
-				foreach ($regexOptionalMatches as $paramMatch)
-				{
-					// Standard regex rule
-					//$routeOptionalParamsMatched[] = $paramName;
-					$routeOptionalParams[$paramMatch[2]] = array(
-						'routeSegment' => $paramMatch[0],
-						'prefix' => $paramMatch[1],
-						'suffix' => $paramMatch[3],
-					);
-
-					// We don't know what type of route param was supplied, so we have to isolate it by stripping off the parts we know
-					$routeParamToken = substr($paramMatch[0], strlen('(' . $paramMatch[1])); // trim off prefix
-					$routeParamToken = substr($routeParamToken, 0, -strlen($paramMatch[3] . ')')); // trim off suffix
-					// Re-assemble route parts with escaping for prefix and suffix
-					$routeRegex = str_replace($paramMatch[0], "(?:" . preg_quote($paramMatch[1]) . $routeParamToken . preg_quote($paramMatch[3]) . ")?", $routeRegex);
-				}
-			}
-
-			// Extract named parameters from route
-			$regexMatches = array();
-			preg_match_all("@" . $this->_routeParamRegex . "@", $route, $regexMatches, PREG_PATTERN_ORDER);
-			//print_r($regexMatches);
-			if (isset($regexMatches[1]) && count($regexMatches[1]) > 0)
-			{
-				$routeParamsMatched = array();
-
-				// Replace all keys with regex
-				foreach ($regexMatches[1] as $paramIndex => $paramName)
-				{
-					// Does parameter have marker for custom regex rule?
-					if (strpos($paramName, '|') !== false)
-					{
-						// Custom regex rule
-						$paramParts = explode('|', $paramName);
-						$routeParamsMatched[] = $paramParts[0];
-						$routeRegex = str_replace("<:" . $paramName . ">", "(" . $paramParts[1] . ")", $routeRegex);
-					}
-					else
-					{
-						// Standard regex rule
-						$routeParamsMatched[] = $paramName;
-						$routeRegex = str_replace("<:" . $paramName . ">", $this->_paramRegex, $routeRegex);
-						$routeRegex = str_replace("<#" . $paramName . ">", $this->_paramRegexNumeric, $routeRegex);
-						$routeRegex = str_replace("<*" . $paramName . ">", $this->_paramRegexWildcard, $routeRegex);
-					}
-				}
-				$routeParams = array_combine($routeParamsMatched, $regexMatches[0]);
-			}
-			else
-			{
-				$this->_isStatic = true;
-			}
-
-			// Escape common URL characters
-			$routeRegex = str_replace('/', '\/', $routeRegex);
+			$this->regex = '/^'.Route\Parser::parse($route).'$/';
 		}
-
-		// Save route info
-		$this->_route = $route;
-		$this->_regexp = "/^" . $routeRegex . "$/";
-		$this->_namedParams = $routeParams;
-		$this->_optionalParams = $routeOptionalParams;
 	}
 
 	/**
 	 * Set or return default params for the route
 	 *
-	 * @param array $params OPTIONAL Array of key => values to return with route match
+	 * @param  array $params OPTIONAL Array of key => values to return with route match
 	 * @return mixed Array or object instance
 	 */
-	public function defaults(array $params = array())
+	public function defaults(array $params = null)
 	{
-		if (count($params) > 0)
+		if ($params == null)
 		{
-			$this->_defaultParams = $params;
-			return $this;
+			return $this->defaultParams;
 		}
-		return $this->_defaultParams;
-	}
 
-	/**
-	 * Return named params for the route
-	 *
-	 * @return array $params Array of key => values to return with route match
-	 */
-	public function namedParams()
-	{
-		return $this->_namedParams;
-	}
-
-	/**
-	 * Return optional named params for the route
-	 *
-	 * @return array $params Array of key => values to return with route match
-	 */
-	public function optionalParams()
-	{
-		return $this->_optionalParams;
-	}
-
-	/**
-	 * Return optional named params for the route
-	 *
-	 * @return array $params Array of key => values to return with route match
-	 */
-	public function optionalParamDefaults()
-	{
-		$defaultParams = $this->defaults();
-		$optionalParamDefaults = array();
-		if ($this->_optionalParams && count($this->_optionalParams) > 0)
-		{
-			foreach ($this->_optionalParams as $paramName => $opts)
-			{
-				if (isset($defaultParams[$paramName]))
-				{
-					$optionalParamDefaults[$paramName] = $defaultParams[$paramName];
-				}
-				else
-				{
-					$optionalParamDefaults[$paramName] = null;
-				}
-			}
-		}
-		return $optionalParamDefaults;
+		$this->defaultParams = $params;
+		return $this;
 	}
 
 	/**
@@ -194,28 +103,25 @@ class Route
 	 *
 	 * @return boolean
 	 */
-	public function isStatic($static = null)
+	public function isStatic()
 	{
-		if (null !== $static)
-		{
-			$this->_isStatic = $static;
-		}
-		return $this->_isStatic;
+		return $this->isStatic;
 	}
 
 	/**
 	 * Unique route name
 	 *
-	 * @param string $name Unique name for the router object
-	 * @return object Self
+	 * @param  string $name Unique route name object
+	 * @return mixed        The name of the route or \Alloy\Route
 	 */
 	public function name($name = null)
 	{
-		if (null === $name)
+		if ($name === null)
 		{
-			return $this->_name;
+			return $this->name;
 		}
-		$this->_name = $name;
+
+		$this->name = $name;
 		return $this;
 	}
 
@@ -226,17 +132,17 @@ class Route
 	 */
 	public function route()
 	{
-		return $this->_route;
+		return $this->route;
 	}
 
 	/**
 	 * Compiled route regex
 	 *
-	 * @return regexp Regular expression representing route
+	 * @return string Regular expression representing route
 	 */
 	public function regexp()
 	{
-		return $this->_regexp;
+		return $this->regexp;
 	}
 
 	/**
@@ -265,25 +171,25 @@ class Route
 	/**
 	 * Set parameters based on request method
 	 *
-	 * @param string $method Request method (GET, POST, PUT, DELETE, etc.)
-	 * @param array $params OPTIONAL Array of key => value parameters to set on route for given request method
-	 * @return mixed object or array
+	 * @param  string $method Request method (GET, POST, PUT, DELETE, etc.)
+	 * @param  array $params OPTIONAL Array of key => value parameters to set on route for given request method
+	 * @return mixed  Array of parameters or \Alloy\Route
 	 */
-	public function methodDefaults($method, array $params = array())
+	public function methodDefaults($method, array $params = null)
 	{
-		$method = strtoupper($method);
-		if (!isset($this->_methodParams[$method]))
+		if ($params === null)
 		{
-			$this->_methodParams[$method] = $params;
+			return $this->methodParams[$method];
+		}
+
+		$method = strtoupper($method);
+		if ( ! isset($this->methodParams[$method]))
+		{
+			$this->methodParams[$method] = $params;
 		}
 		else
 		{
-			$this->_methodParams[$method] += $params;
-		}
-
-		if (count($params) == 0)
-		{
-			return $this->_methodParams[$method];
+			$this->methodParams[$method] += $params;
 		}
 
 		return $this;
@@ -292,24 +198,24 @@ class Route
 	/**
 	 * Condition callback
 	 *
-	 * @param callback $callback Callback function to be used when providing custom route match conditions
 	 * @throws \InvalidArgumentException When supplied argument is not a valid callback
+	 *
+	 * @param  callback $callback  Callback function to be used when providing custom route match conditions
 	 * @return callback
 	 */
 	public function condition($callback = null)
 	{
-		// Setter
-		if (null !== $callback)
+		if ($callback !== null)
 		{
-			if (!is_callable($callback))
+			if ( ! is_callable($callback))
 			{
 				throw new \InvalidArgumentException("Condition provided is not a valid callback. Given (" . gettype($callback) . ")");
 			}
-			$this->_condition = $callback;
+			$this->condition = $callback;
 			return $this;
 		}
 
-		return $this->_condition;
+		return $this->condition;
 	}
 
 	/**
@@ -322,17 +228,17 @@ class Route
 	public function afterMatch($callback = null)
 	{
 		// Setter
-		if (null !== $callback)
+		if ($callback !== null)
 		{
-			if (!is_callable($callback))
+			if ( ! is_callable($callback))
 			{
 				throw new \InvalidArgumentException("The after match callback provided is not valid. Given (" . gettype($callback) . ")");
 			}
-			$this->_afterMatch = $callback;
+			$this->afterMatch = $callback;
 			return $this;
 		}
 
-		return $this->_afterMatch;
+		return $this->afterMatch;
 	}
 
 }
