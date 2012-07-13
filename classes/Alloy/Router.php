@@ -31,7 +31,7 @@ class Router
 	 * @param  array  $defaults  Array of key => value parameters to supply as defaults
 	 * @return \Alloy\Route      The newly created route
 	 */
-	public function route($name, $route, array $defaults = null)
+	public function route($name, $route, array $defaults = array())
 	{
 		$route = new Route($route, $defaults);
 		$this->routes[$name] = $route;
@@ -157,98 +157,45 @@ class Router
 	/**
 	 * Put a URL together by matching route name and params
 	 *
-	 * @param array $params Array of key => value params to fill in for given route
-	 * @param string $routeName Name of the route previously defined
+	 * @throws \UnexpectedValueException  When the named route doesn't exist
+	 * @throws \UnexpectedValueException  Params that don't match given route name (Unable to create URL string)
 	 *
+	 * @param  string $name     The name of the route
+	 * @param  array  $params   Array of key => value params to fill in for given route
+	 * @param  string $methods  The request method
 	 * @return string Full matched URL as string with given values put in place of named parameters
-	 * @throws UnexpectedValueException For non-existent route name or params that don't match given route name (Unable to create URL string)
 	 */
-	public function url($params = array(), $routeName = null)
+	public function url($name, array $params = array(), $method = "GET")
 	{
-		// If params is string, assume route name for static route
-		if (null === $routeName && is_string($params))
+		if ( ! array_key_exists($name, $this->routes))
 		{
-			$routeName = $params;
-			$params = array();
+			throw new \UnexpectedValueException("Error creating URL: Route name {$name} not found in defined routes.");
 		}
 
-		if (!$routeName)
-		{
-			throw new \UnexpectedValueException("Error creating URL: Route name must be specified.");
-		}
+		$route = $this->routes[$name];
+		$url = $route->route();
 
-		if (!isset($this->routes[$routeName]))
-		{
-			throw new \UnexpectedValueException("Error creating URL: Route name '" . $routeName . "' not found in defined routes.");
-		}
-
-		$routeUrl = "";
-		$route = $this->routes[$routeName];
-		$routeUrl = $route->route();
-
-		// Static routes - let's save some time here
 		if ($route->isStatic())
 		{
-			return $routeUrl;
+			return $url;
 		}
 
+		$url = preg_replace("/\(|\)/", "", $url);
 
-		$routeDefaults = $route->defaults();
-		$routeParams = array_merge($routeDefaults, $route->namedParams());
-		$optionalParams = $route->optionalParams();
-
-		// Match all params on route that do not have defaults
-		$matchedParams = $routeDefaults; // Begin with defaults
-		foreach (array_merge($matchedParams, $params) as $key => $value)
+		$find = array();
+		$replace = array();
+		foreach ($route->getParams($params, $method) as $key => $value)
 		{
-			// Optional params
-			if (isset($optionalParams[$key]))
+			if ($value === null)
 			{
-				// If no given value, or given value is the same as default, set value to empty
-				if ((isset($routeDefaults[$key]) && !isset($params[$key])))
-				{
-					$matchedParams[$key] = '';
-				}
-				else
-				{
-					$matchedParams[$key] = $optionalParams[$key]['prefix'] . $value . $optionalParams[$key]['suffix'];
-				}
-				$routeParams[$key] = $optionalParams[$key]['routeSegment'];
-				// Required/standard param
+				$value = "";
 			}
-			elseif (isset($routeParams[$key]))
-			{
-				$matchedParams[$key] = $value;
-			}
+
+			$find[] = "/\<[\:\#\*]{$key}[^\>]*\>/";
+			$replace[] = urlencode($value);
 		}
 
-		//var_dump($matchedParams);
-		// Ensure all params have been matched, exception if not
-		if (count(array_diff_key($matchedParams, $routeParams)) > 0)
-		{
-			throw new \UnexpectedValueException("Error creating URL: Route '" . $routeName . "' has parameters that have not been matched.");
-		}
-
-		// Fill in values and put URL together
-		foreach ($routeParams as $paramName => $paramPlaceholder)
-		{
-			if (!isset($matchedParams[$paramName]))
-			{
-				throw new \UnexpectedValueException("Error creating URL for route '" . $routeName . "': Required route parameter '" . $paramName . "' has not been supplied.");
-			}
-			$routeUrl = str_replace($paramPlaceholder, urlencode($matchedParams[$paramName]), $routeUrl);
-		}
-
-		// Remove all optional parameters with no supplied match or default value
-		foreach ($optionalParams as $param)
-		{
-			$routeUrl = str_replace($param['routeSegment'], '', $routeUrl);
-		}
-
-		// Ensure escaping characters are removed
-		$routeUrl = str_replace('\\', '', $routeUrl);
-
-		return $routeUrl;
+		return preg_replace($find, $replace, $url);
 	}
 
 	/**

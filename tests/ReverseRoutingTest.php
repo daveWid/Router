@@ -11,46 +11,69 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 	{
 		parent::setUp();
 		$this->router = new \Alloy\Router;
+
+		$this->router->route('mvc', '<:controller>/<:action>.<:format>');
+		$this->router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
+		$this->router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
+		$this->router->route('optional', '<:controller>(/<:action>(/<:id|\d+>))');
 	}
 
-	public function testInstance()
+	public function testUrlStatic()
 	{
-		$this->assertTrue($this->router instanceof \Alloy\Router);
+		$this->router->route('login', '/user/login');
+
+		$url = $this->router->url('login');
+		$this->assertEquals("/user/login", $url);
 	}
+
+	public function testOptionalRoute()
+	{
+		$params = array(
+			'controller' => "user",
+			'action' => "view",
+			'id' => 500,
+		);
+
+		$url = $this->router->url('optional', $params);
+		$this->assertSame('user/view/500', $url);
+	}
+
 
 	public function testUrlMVCAction()
 	{
-		$router = $this->router;
-		$router->route('mvc', '<:controller>/<:action>.<:format>');
-		$router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
-		$router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
+		$params = array(
+			'controller' => 'user',
+			'action' => 'profile',
+			'format' => 'html'
+		);
 
-		$url = $router->url(array('controller' => 'user', 'action' => 'profile', 'format' => 'html'), 'mvc');
-
+		$url = $this->router->url('mvc', $params);
 		$this->assertEquals("user/profile.html", $url);
 	}
 
 	public function testUrlMVCItem()
 	{
-		$router = $this->router;
-		$router->route('mvc', '<:controller>/<:action>.<:format>');
-		$router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
-		$router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
+		$params = array(
+			'controller' => 'blog',
+			'action' => 'show',
+			'id' => 55,
+			'format' => 'json'
+		);
 
-		$url = $router->url(array('controller' => 'blog', 'action' => 'show', 'id' => 55, 'format' => 'json'), 'mvc_item');
-
+		$url = $this->router->url('mvc_item', $params);
 		$this->assertEquals("blog/show/55.json", $url);
 	}
 
 	public function testUrlBlogPost()
 	{
-		$router = $this->router;
-		$router->route('mvc', '<:controller>/<:action>.<:format>');
-		$router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
-		$router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
+		$params = array(
+			'dir' => 'blog',
+			'year' => 2009,
+			'month' => '10',
+			'slug' => 'blog-post-title'
+		);
 
-		$url = $router->url(array('dir' => 'blog', 'year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'), 'blog_post');
-
+		$url = $this->router->url('blog_post', $params);
 		$this->assertEquals("blog/2009/10/blog-post-title", $url);
 	}
 
@@ -60,36 +83,29 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 		$router->route('blog_post_x', '<:dir>/<#year>/<#month>/<:slug>')
 				->defaults(array('dir' => 'blog'));
 
+		$params = array(
+			'year' => 2009,
+			'month' => '10',
+			'slug' => 'blog-post-title'
+		);
+
 		// Do not supply 'dir', expect the defined default 'dir' => 'blog' in the route definition to fill it in
-		$url = $router->url(array('year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'), 'blog_post_x');
-
+		$url = $router->url('blog_post_x', $params);
 		$this->assertEquals("blog/2009/10/blog-post-title", $url);
-	}
-
-	/**
-	 * @expectedException \UnexpectedValueException
-	 */
-	public function testUrlBlogPostException()
-	{
-		$router = $this->router;
-		$router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
-
-		// Do not supply 'dir' or 'slug', expect exception to be raised
-		$url = $router->url(array('year' => 2009, 'month' => '10'), 'blog_post');
 	}
 
 	public function testUrlRemoveEscapeCharacters()
 	{
 		// Route with escape character before the dot '.'
-		$this->router->route('index_action', '<:action>\.<:format>')
+		$this->router->route('index_action', '<:action>.<:format>')
 				->defaults(array('format' => 'html'));
 
 		// Use default format
-		$url = $this->router->url(array('action' => 'new'), 'index_action');
+		$url = $this->router->url('index_action', array('action' => 'new'));
 		$this->assertEquals("new.html", $url);
 
 		// Use custom format
-		$url = $this->router->url(array('action' => 'new', 'format' => 'xml'), 'index_action');
+		$url = $this->router->url('index_action', array('action' => 'new', 'format' => 'xml'));
 		$this->assertEquals("new.xml", $url);
 	}
 
@@ -100,28 +116,12 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 				->defaults(array('format' => 'html'));
 
 		// Use default format (URL should not have '.html', because it is not set and it is default)
-		$url = $this->router->url(array('controller' => 'events'), 'test');
-		$this->assertEquals("events", $url);
-
-		// Use default format (URL SHOULD have '.html', because it is set)
-		$url = $this->router->url(array('controller' => 'events', 'format' => 'html'), 'test');
+		$url = $this->router->url('test', array('controller' => 'events'));
 		$this->assertEquals("events.html", $url);
 
 		// Use custom format (URL SHOULD have '.xml' because it IS set and it IS NOT default)
-		$url = $this->router->url(array('controller' => 'events', 'format' => 'xml'), 'test');
+		$url = $this->router->url('test', array('controller' => 'events', 'format' => 'xml'));
 		$this->assertEquals("events.xml", $url);
-	}
-
-	/**
-	 * Static route - no matched parameters
-	 */
-	public function testUrlStatic()
-	{
-		$this->router->route('login', '/user/login');
-
-		// Get static URL with no parameters
-		$url = $this->router->url('login');
-		$this->assertEquals("user/login", $url);
 	}
 
 	public function testUrlPlusSignIsNotEncoded()
@@ -129,7 +129,7 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 		$router = $this->router;
 		$router->route('match', '<:match>');
 
-		$url = $router->url(array('match' => 'blog post'), 'match');
+		$url = $router->url('match', array('match' => 'blog post'));
 
 		$this->assertEquals("blog+post", $url);
 	}
