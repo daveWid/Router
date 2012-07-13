@@ -78,8 +78,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
     public function testUrlOptionalParamsNotInUrlWhenValueNotSet()
     {
         // Route with escape character before the dot '.'
-        $this->router->route('test', '<:controller>(.<:format>)')
-                ->defaults(array('format' => 'html'));
+        $this->router->route('test', '<:controller>(.<:format>)');
         
         // Use default format (URL should not have '.html', because it is not set and it is default)
         $url = $this->router->url('test', array('controller' => 'events'));
