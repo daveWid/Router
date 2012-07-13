@@ -12,11 +12,6 @@ namespace Alloy;
 class Route
 {
 	/**
-	 * @var string  The name of the route
-	 */
-	private $name = null;
-
-	/**
 	 * @var string  The route as entered
 	 */
 	private $route = null;
@@ -66,13 +61,11 @@ class Route
 	 *
 	 * @throws \DomainException  If the parser is not set
 	 *
-	 * @param  string $name      The name of the route
 	 * @param  string $route     The user supplied route
 	 * @param  array  $defaults  Any default parameters
 	 */
-	public function __construct($name, $route, $defaults = array())
+	public function __construct($route, $defaults = array())
 	{
-		$this->name = $name;
 		$this->route = $route;
 		$this->defaultParams = $defaults;
 
@@ -117,23 +110,6 @@ class Route
 	public function isStatic()
 	{
 		return $this->isStatic;
-	}
-
-	/**
-	 * Unique route name
-	 *
-	 * @param  string $name Unique route name object
-	 * @return mixed        The name of the route or \Alloy\Route
-	 */
-	public function name($name = null)
-	{
-		if ($name === null)
-		{
-			return $this->name;
-		}
-
-		$this->name = $name;
-		return $this;
 	}
 
 	/**

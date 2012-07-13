@@ -33,7 +33,7 @@ class Router
 	 */
 	public function route($name, $route, array $defaults = null)
 	{
-		$route = new Route($name, $route, $defaults);
+		$route = new Route($route, $defaults);
 		$this->routes[$name] = $route;
 		return $route;
 	}

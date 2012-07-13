@@ -10,12 +10,12 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 	public function setUp()
 	{
 		parent::setUp();
-		$this->route = new \Alloy\Route('contact', "/contact");
+		$this->route = new \Alloy\Route("/contact");
 	}
 
 	public function testStaticCheck()
 	{
-		$regex = new \Alloy\Route('regex', '/<:action>');
+		$regex = new \Alloy\Route('/<:action>');
 
 		$this->assertTrue($this->route->isStatic());
 		$this->assertFalse($regex->isStatic());
@@ -25,7 +25,7 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 	{
 		$data = array('constructor' => "static", 'action' => 'testing');
 
-		$route = new \Alloy\Route('testing', '/testing', $data);
+		$route = new \Alloy\Route('/testing', $data);
 		$this->assertSame($data, $route->defaults());
 	}
 
@@ -35,17 +35,6 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 
 		$this->route->defaults($data);
 		$this->assertSame($data, $this->route->defaults());
-	}
-
-	public function testGetName()
-	{
-		$this->assertSame('contact', $this->route->name());
-	}
-
-	public function testSetName()
-	{
-		$this->route->name('changed');
-		$this->assertSame('changed', $this->route->name());
 	}
 
 	public function testRoute()
@@ -121,7 +110,7 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 
 	public function testMatchingParams()
 	{
-		$route = new \Alloy\Route('test', "/api/<:controller>(/<#id>)");
+		$route = new \Alloy\Route("/api/<:controller>(/<#id>)");
 
 		$matches = array(
 			'controller' => 'user'
@@ -137,7 +126,7 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 
 	public function testMatchingParamsWithMethod()
 	{
-		$route = new \Alloy\Route('test', "/api/<:controller>(/<#id>)");
+		$route = new \Alloy\Route("/api/<:controller>(/<#id>)");
 		$route->get(array('action' => 'view'));
 
 		$matches = array(
