@@ -67,10 +67,13 @@ class Router
 		$params = array();
 		foreach ($this->routes as $name => $route)
 		{
-			$matches = $this->getMatches($route, $url);
+			$matches = array();
+			preg_match($route->regexp(), $url, $matches);
+
 			if ( ! empty($matches))
 			{
-				$params = $this->getRouteParams($route, $matches, $method);
+				$matches = $this->normalizeMatches($matches);
+				$params = $route->getParams($matches, $method);
 
 				$callback = $route->condition();
 				if ($callback !== null)
@@ -99,28 +102,14 @@ class Router
 	}
 
 	/**
-	 * Does the route match the current url?
+	 * Normalizes the matches array returned from a preg_match call.
 	 *
-	 * @param  Route  $route    The route to check
-	 * @param  string $url      The url to test against
-	 * @return mixed            Either an array of matches or boolean
-	 */
-	private function getMatches(Route $route, $url)
-	{
-		$matches = array();
-		preg_match($route->regexp(), $url, $matches);
-		return $matches;
-	}
-
-	/**
-	 * Gets the parameters from the matches route.
+	 * This will pull out just the named sections and remove the number indexed matches.
 	 *
-	 * @param  Route  $route    The matched route
 	 * @param  array  $matches  The matched param list
-	 * @param  string $method   HTTP request method
 	 * @return array
 	 */
-	private function getRouteParams(Route $route, array $matches, $method)
+	private function normalizeMatches(array $matches)
 	{
 		$params = array();
 
@@ -132,7 +121,7 @@ class Router
 			}
 		}
 
-		return array_merge($route->defaults(), $route->methodDefaults($method), $params);
+		return $params;
 	}
 
 	/**
