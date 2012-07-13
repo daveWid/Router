@@ -37,6 +37,11 @@ class Route
 	private $defaultParams = array();
 
 	/**
+	 * @var array   The defaults for all named sections of the route.
+	 */
+	private $namedParams = array();
+
+	/**
 	 * @var array   Additional parameters for the different HTTP verbs
 	 */
 	private $methodParams = array(
@@ -79,6 +84,11 @@ class Route
 		else
 		{
 			$this->regex = Route\Parser::parse($route);
+		}
+
+		foreach (Route\Parser::$namedParams as $key)
+		{
+			$this->namedParams[$key] = null;
 		}
 	}
 
@@ -240,6 +250,19 @@ class Route
 		}
 
 		return $this->afterMatch;
+	}
+
+	/**
+	 * Based on the matching parameters, gets the parameters
+	 * associated with this route.
+	 *
+	 * @param  array  $matches  Any matched parameters from the router
+	 * @param  string $method   The http request method
+	 * @return array
+	 */
+	public function getParams(array $matches, $method)
+	{
+		return array_merge($this->namedParams, $this->defaultParams, $this->methodDefaults($method), $matches);
 	}
 
 }

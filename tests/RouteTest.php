@@ -119,4 +119,20 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 		$this->route->afterMatch('notacallback');
 	}
 
+	public function testMatchingParams()
+	{
+		$route = new \Alloy\Route('test', "/api/<:controller>(/<#id>)");
+
+		$matches = array(
+			'controller' => 'user'
+		);
+
+		$expected = array(
+			'controller' => 'user',
+			'id' => null
+		);
+
+		$this->assertEquals($expected, $route->getParams($matches, "GET"));
+	}
+
 }
