@@ -31,7 +31,7 @@ class ParserTest extends \PHPUnit_Framework_TestCase
 
 	public function testNamedParams()
 	{
-		Parser::parse("/(<:controller>(/<:action>(/<#id>)))");
+		Parser::parse("/<:controller>/<:action>/<#id>");
 
 		$expected = array('controller','action','id');
 		$this->assertSame($expected, Parser::$namedParams);
