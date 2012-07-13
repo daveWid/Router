@@ -104,7 +104,7 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
         $route = $this->router->matchedRoute();
         
         // Match route name?
-        $this->assertEquals("login_route", $route->name());
+        $this->assertEquals("login_route", $this->router->getMatchedRouteName());
         // Match resulting URL?
         $this->assertEquals("user", $params['controller']);
         $this->assertEquals("login", $params['action']);
