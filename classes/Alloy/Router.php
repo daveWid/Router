@@ -8,20 +8,20 @@ namespace Alloy;
  * Maps URL to named parameters for use in application
  *
  * @package Alloy
- * @link http://alloyframework.com/
- * @license http://www.opensource.org/licenses/bsd-license.php
+ * @link    http://alloyframework.com/
+ * @license http://www.opensource.org/licenses/bsd-license.php BSD
  */
 class Router
 {
 	/**
 	 * @var array  Stored routes
 	 */
-	protected $routes = array();
+	private $routes = array();
 
 	/**
-	 * @var string  The name of the matched route.
+	 * @var \Alloy\Route  The matched route.
 	 */
-	protected $matchedRouteName;
+	private $matchedRoute;
 
 	/**
 	 * Connect route
@@ -33,14 +33,8 @@ class Router
 	 */
 	public function route($name, $route, array $defaults = null)
 	{
-		$route = new Route($route);
-		$this->routes[$name] = $route->name($name);
-
-		if ($defaults !== null)
-		{
-			$route->defaults($defaults);
-		}
-
+		$route = new Route($name, $route, $defaults);
+		$this->routes[$name] = $route;
 		return $route;
 	}
 
@@ -70,140 +64,105 @@ class Router
 			throw new \OutOfBoundsException("There must be at least one route defined to match for.");
 		}
 
-		// Clean up URL for matching
-		$url = trim($url, '/');
 		$params = array();
-
-		// Loop over set routes to find a match
-		// Order matters - Looping will stop when first suitable match is found
-		$routes = $this->routes();
-		foreach ($routes as $routeName => $route)
+		foreach ($this->routes as $name => $route)
 		{
-			if ($params = $this->routeMatch($route, $method, $url))
+			$matches = $this->getMatches($route, $url);
+			if ( ! empty($matches))
 			{
-				// Check condition callback if set
-				$cb = $route->condition();
-				if (null !== $cb)
+				$params = $this->getRouteParams($route, $matches, $method);
+
+				$callback = $route->condition();
+				if ($callback !== null)
 				{
-					// Pass in method, url, and matched params
-					$cbr = call_user_func($cb, $params, $method, $url);
-					// Condition returned false - no match - skip route and clear matched data
-					if (false === $cbr)
+					$passed = call_user_func($callback, $params, $method, $url);
+
+					if ($passed === false)
 					{
 						$params = array();
-						$this->matchedRouteName = null;
 						continue;
 					}
 				}
+
+				$this->matchedRoute = $route;
 				break;
 			}
 		}
 
-		// Run 'afterMatch' callback if one is provided
-		if ($params)
+
+		if ( ! empty($params) AND $route->afterMatch() !== null)
 		{
-			// If we have an after match callback, we can use it to modify params
-			$mcb = $route->afterMatch();
-			if (null !== $mcb)
-			{
-				// Pass in method, url, and matched params
-				$params = call_user_func($mcb, $params, $method, $url);
-			}
+			$params = call_user_func($route->afterMatch(), $params, $method, $url);
 		}
 
 		return $params;
 	}
 
 	/**
-	 * Match URL against a specific given route
+	 * Does the route match the current url?
+	 *
+	 * @param  Route  $route    The route to check
+	 * @param  string $url      The url to test against
+	 * @return mixed            Either an array of matches or boolean
 	 */
-	protected function routeMatch(Route $route, $method, $url)
+	private function getMatches(Route $route, $url)
 	{
-		$params = array();
-
-		// Static route - no PREG overhead
-		if ($route->isStatic())
-		{
-			$routeUrl = $route->route();
-
-			// Match? (already cleaned/trimmed)
-			if ($routeUrl == $url)
-			{
-				// Return defaults + HTTP method params
-				$params = array_merge($route->defaults(), $route->methodDefaults($method));
-			}
-
-			// Store matched route name
-			$this->matchedRouteName = $route->name();
-
-			// Match params
-		}
-		else
-		{
-			$result = preg_match($route->regexp(), $url, $matches);
-			if ($result)
-			{
-				// Store matched route name
-				$this->matchedRouteName = $route->name();
-
-				// Shift off first "match" result - full URL input string
-				array_shift($matches);
-
-				// Only named params, leaving off optionals
-				$namedParams = array_merge($route->namedParams(), $route->optionalParamDefaults());
-				$namedParamsNotOptional = array_diff_key($namedParams, $route->optionalParamDefaults());
-				$namedParamsMatched = $namedParamsNotOptional;
-
-				// Equalize matched params, rely on matching order
-				// @todo Switch all routes to named captures to avoid this. Man, all these regex woes make my head hurt.
-				// @link http://www.regular-expressions.info/named.html
-				$namedParamsIndexed = array_keys($namedParams);
-				$mi = count($namedParamsNotOptional);
-				while (count($matches) > $mi)
-				{
-					$namedParamsMatched[$namedParamsIndexed[$mi]] = $namedParams[$namedParamsIndexed[$mi]];
-					$mi++;
-				}
-				//var_dump($route->name(), $matches, $namedParamsMatched, $namedParams);
-				// Combine params
-				if (count($namedParamsMatched) != count($matches))
-				{
-					// Route has inequal matches to named params
-					throw new \InvalidArgumentException("Error matching URL to route params: matched(" . count($matches) . ") != named(" . count($namedParamsMatched) . ")");
-				}
-				$params = array_combine(array_keys($namedParamsMatched), $matches);
-
-				if (strtoupper($method) != "GET")
-				{
-					// 1) Determine which actions are set in $params that are also in 'methodDefaults'
-					// 2) Override the 'methodDefaults' with the explicitly set $params
-					$setParams = array_filter(array_intersect_key($params, $route->methodDefaults($method)));
-					$methodParams = array_merge($route->namedParams(), $route->defaults(), $params, $route->methodDefaults($method), $setParams);
-					$params = $methodParams;
-				}
-				else
-				{
-					$params = array_merge($route->namedParams(), $route->defaults(), $route->methodDefaults($method), $params);
-				}
-				//$params = array_merge($route->namedParams(), $route->defaults(), $route->methodDefaults($method), $params);
-			}
-		}
-		return array_map('urldecode', $params);
+		$matches = array();
+		preg_match($route->regexp(), $url, $matches);
+		return $matches;
 	}
 
 	/**
-	 * Return last matched route
+	 * Gets the parameters from the matches route.
+	 *
+	 * @param  Route  $route    The matched route
+	 * @param  array  $matches  The matched param list
+	 * @param  string $method   HTTP request method
+	 * @return array
 	 */
-	public function matchedRoute()
+	private function getRouteParams(Route $route, array $matches, $method)
 	{
-		if ($this->matchedRouteName)
+		$params = array();
+
+		foreach ($matches as $key => $value)
 		{
-			return $this->routes[$this->matchedRouteName];
+			if (is_string($key))
+			{
+				$params[$key] = $value;
+			}
+		}
+
+		return array_merge($route->defaults(), $route->methodDefaults($method), $params);
+	}
+
+	/**
+	 * Return the last matched route
+	 *
+	 * @throws \LogicException  If no route is matched yet.
+	 *
+	 * @return \Alloy\Route
+	 */
+	public function getMatchedRoute()
+	{
+		if ($this->matchedRoute)
+		{
+			return $this->matchedRoute;
 		}
 		else
 		{
 			throw new \LogicException("Unable to return last route matched - No route has been matched yet.");
 		}
+	}
+
+	/**
+	 * Return the name of the last matched route
+	 *
+	 * @return string
+	 */
+	public function getMatchedRouteName()
+	{
+		$route = $this->getMatchedRoute();
+		return $route->name();
 	}
 
 	/**
