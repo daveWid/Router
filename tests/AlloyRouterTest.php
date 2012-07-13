@@ -25,12 +25,12 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
     
     public function testRouteSingleAlpha()
     {
-        $this->router->route('module', '/<:module>');
+        $this->router->route('module', '<:module>');
         $params = $this->router->match("GET", "test");
         $this->assertEquals('test', $params['module']);
         
         // With beginning slash
-        $params = $this->router->match("GET", "/test");
+        $params = $this->router->match("GET", "test");
         $this->assertEquals('test', $params['module']);
     }
     
@@ -112,21 +112,21 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
     
     public function testRouteWithSpaces()
     {
-        $this->router->route('module', '/<:module>');
-        $params = $this->router->match("GET", "test ing");
+        $this->router->route('module', '<:module>');
+        $params = $this->router->match("GET", 'test ing');
         $this->assertEquals('test ing', $params['module']);
     }
     
     public function testRouteWithUrlEncodingIsDecoded()
     {
-        $this->router->route('module', '/<:module>');
+        $this->router->route('module', '<:module>');
         $params = $this->router->match("GET", "test+ing");
         $this->assertEquals('test ing', $params['module']);
     }
     
     public function testRouteWithUrlEncodingPercentSignIsDecoded()
     {
-        $this->router->route('module', '/<:module>');
+        $this->router->route('module', '<:module>');
         $params = $this->router->match("GET", "test%20ing");
         $this->assertEquals('test ing', $params['module']);
     }
