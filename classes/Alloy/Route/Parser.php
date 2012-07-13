@@ -37,6 +37,11 @@ class Parser
 	const REGEX_WILDCARD = ".*";
 
 	/**
+	 * @var array  Any named params found during the last parse.
+	 */
+	public static $namedParams = array();
+
+	/**
 	 * Parses a url that has regular expressions into one that can be matched.
 	 *
 	 * @param  string $route  The user supplied route
@@ -44,6 +49,8 @@ class Parser
 	 */
 	public static function parse($route)
 	{
+		self::$namedParams = array();
+
 		$routeRegex = $route;
 
 		// Extract optional named parameters from route
@@ -62,7 +69,7 @@ class Parser
 			}
 		}
 
-		return self::parseStatic($routeRegex);
+		return '/^'.str_replace('/', '\/', $routeRegex).'$/';
 	}
 
 	/**
@@ -72,6 +79,7 @@ class Parser
 	 */
 	public static function parseStatic($route)
 	{
+		self::$namedParams = array();
 		return '/^'.str_replace('/', '\/', $route).'$/';
 	}
 
@@ -167,6 +175,7 @@ class Parser
 			$regex .= "?";
 		}
 
+		self::$namedParams[] = $name;
 		return $regex;
 	}
 
