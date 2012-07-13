@@ -173,29 +173,8 @@ class Router
 		}
 
 		$route = $this->routes[$name];
-		$url = $route->route();
 
-		if ($route->isStatic())
-		{
-			return $url;
-		}
-
-		$url = preg_replace("/\(|\)/", "", $url);
-
-		$find = array();
-		$replace = array();
-		foreach ($route->getParams($params, $method) as $key => $value)
-		{
-			if ($value === null)
-			{
-				$value = "";
-			}
-
-			$find[] = "/\<[\:\#\*]{$key}[^\>]*\>/";
-			$replace[] = urlencode($value);
-		}
-
-		return preg_replace($find, $replace, $url);
+		return $route->url($params, $method);
 	}
 
 	/**

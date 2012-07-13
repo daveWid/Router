@@ -241,4 +241,89 @@ class Route
 		return array_merge($this->namedParams, $this->defaultParams, $this->methodDefaults($method), $matches);
 	}
 
+	/**
+	 * Generate the url for this route. Useful in reverse routing.
+	 *
+	 * @param  array  $params  The params to substitue
+	 * @param  type   $method  The request method
+	 * @return string
+	 */
+	public function url(array $params, $method)
+	{
+		$url = $this->route;
+		if ($this->isStatic())
+		{
+			return $url;
+		}
+
+		$params = $this->getParams($params, $method);
+
+		$url = $this->replaceOptional($url, $params);
+		return $this->replaceRequired($url, $params);
+	}
+
+	/**
+	 * Replaces all of the optional parameters.
+	 *
+	 * @param  string $url     The current route string
+	 * @param  array  $params  The parameters used for replacing
+	 * @return string
+	 */
+	private function replaceOptional($url, array $params)
+	{
+		if (strpos($url, "(") === false)
+		{
+			return $url;
+		}
+
+		$match = array();
+
+		// The pattern looks for all ( with a matching ) looking inside out.
+		while(preg_match('#\([^()]++\)#', $url, $match))
+		{
+			$param = substr($match[0], 1, -1); // Take off the ( and )
+			list($parsed) = Route\Parser::parseParams($param);
+
+			$replace = "";
+			if (array_key_exists($parsed['name'], $params) AND $params[$parsed['name']] !== null)
+			{
+				$replace = str_replace($parsed['token'], urlencode($params[$parsed['name']]), $param);
+			}
+
+			$url = str_replace($match[0], $replace, $url);
+		}
+
+		return $url;
+	}
+
+	/**
+	 * Replaces required route parameters
+	 *
+	 * @throws \UnexpectedValueException
+	 *
+	 * @param  string $url     The url to check
+	 * @param  array  $params  The found params
+	 * @return string
+	 */
+	private function replaceRequired($url, array $params)
+	{
+		if (strpos($url, "<") === false)
+		{
+			return $url;
+		}
+
+		$matches = Route\Parser::parseParams($url);
+		foreach ($matches as $match)
+		{
+			if ( ! array_key_exists($match['name'], $params) OR $params[$match['name']] === null)
+			{
+				throw new \UnexpectedValueException("Required route parameter {$match['name']} has not been supplied.");
+			}
+
+			$url = str_replace($match['token'], urlencode($params[$match['name']]), $url);
+		}
+
+		return $url;
+	}
+
 }
