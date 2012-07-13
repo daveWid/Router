@@ -26,19 +26,6 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals("/user/login", $url);
 	}
 
-	public function testOptionalRoute()
-	{
-		$params = array(
-			'controller' => "user",
-			'action' => "view",
-			'id' => 500,
-		);
-
-		$url = $this->router->url('optional', $params);
-		$this->assertSame('user/view/500', $url);
-	}
-
-
 	public function testUrlMVCAction()
 	{
 		$params = array(
@@ -132,6 +119,27 @@ class ReverseRoutingTest extends \PHPUnit_Framework_TestCase
 		$url = $router->url('match', array('match' => 'blog post'));
 
 		$this->assertEquals("blog+post", $url);
+	}
+
+	public function testOptionalParamsRoute()
+	{
+		$params = array(
+			'controller' => "user",
+			'action' => "view",
+			'id' => 500,
+		);
+
+		$url = $this->router->url('optional', $params);
+		$this->assertSame('user/view/500', $url);
+	}
+
+	/**
+	 * @expectedException \UnexpectedValueException
+	 */
+	public function testDefaultParamMissingThrowsException()
+	{
+		$route = new \Alloy\Route("<:controller>");
+		$route->url(array(), "GET");
 	}
 
 }
