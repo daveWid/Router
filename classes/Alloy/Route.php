@@ -286,7 +286,7 @@ class Route
 			list($parsed) = Route\Parser::parseParams($param);
 
 			$replace = "";
-			if (array_key_exists($parsed['name'], $params) AND $params[$parsed['name']] !== null)
+			if (array_key_exists($parsed['name'], $params) AND $params[$parsed['name']])
 			{
 				$replace = str_replace($parsed['token'], urlencode($params[$parsed['name']]), $param);
 			}
@@ -316,7 +316,7 @@ class Route
 		$matches = Route\Parser::parseParams($url);
 		foreach ($matches as $match)
 		{
-			if ( ! array_key_exists($match['name'], $params) OR $params[$match['name']] === null)
+			if ( ! array_key_exists($match['name'], $params) OR ! $params[$match['name']])
 			{
 				throw new \UnexpectedValueException("Required route parameter {$match['name']} has not been supplied.");
 			}
