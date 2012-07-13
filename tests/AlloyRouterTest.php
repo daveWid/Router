@@ -149,11 +149,11 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
 
     public function testRouteConditionFalse()
     {
-        $this->router->route('module', '/<:module>')
+        $this->router->route('module', '<:module>')
             ->condition(function($params, $method, $url) {
                 return ($url != "test");
             });
-        $this->router->route('module2', '/<:module2>');
+        $this->router->route('module2', '<:module2>');
         
         // Match SECOND route (first one should skip)
         $params = $this->router->match("GET", "test");
@@ -172,7 +172,7 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
 
     public function testRouteAfterMatchCallback()
     {
-        $this->router->route('module', '/<:module>')
+        $this->router->route('module', '<:module>')
             ->afterMatch(function($params, $method, $url) {
                 // Override 'module' to 'someValue'
                 $params['module'] = 'someValue';
