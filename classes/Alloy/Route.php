@@ -238,7 +238,8 @@ class Route
 	 */
 	public function getParams(array $matches, $method)
 	{
-		return array_merge($this->namedParams, $this->defaultParams, $this->methodDefaults($method), $matches);
+		$params =  array_merge($this->namedParams, $this->defaultParams, $this->methodDefaults($method), $matches);
+		return array_map('urldecode', $params);
 	}
 
 	/**
