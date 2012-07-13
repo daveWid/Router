@@ -135,4 +135,22 @@ class RouteTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals($expected, $route->getParams($matches, "GET"));
 	}
 
+	public function testMatchingParamsWithMethod()
+	{
+		$route = new \Alloy\Route('test', "/api/<:controller>(/<#id>)");
+		$route->get(array('action' => 'view'));
+
+		$matches = array(
+			'controller' => 'user'
+		);
+
+		$expected = array(
+			'controller' => 'user',
+			'id' => null,
+			'action' => 'view'
+		);
+
+		$this->assertEquals($expected, $route->getParams($matches, "GET"));
+	}
+
 }
