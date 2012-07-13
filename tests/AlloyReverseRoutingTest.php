@@ -19,7 +19,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         $router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
         $router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
         
-        $url = $router->url(array('controller' => 'user', 'action' => 'profile', 'format' => 'html'), 'mvc');
+        $url = $router->url('mvc', array('controller' => 'user', 'action' => 'profile', 'format' => 'html'));
         
         $this->assertEquals("user/profile.html", $url);
     }
@@ -31,7 +31,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         $router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
         $router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
         
-        $url = $router->url(array('controller' => 'blog', 'action' => 'show', 'id' => 55, 'format' => 'json'), 'mvc_item');
+        $url = $router->url('mvc_item', array('controller' => 'blog', 'action' => 'show', 'id' => 55, 'format' => 'json'));
         
         $this->assertEquals("blog/show/55.json", $url);
     }
@@ -43,7 +43,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         $router->route('mvc_item', '<:controller>/<:action>/<#id>.<:format>');
         $router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
         
-        $url = $router->url(array('dir' => 'blog', 'year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'), 'blog_post');
+        $url = $router->url('blog_post', array('dir' => 'blog', 'year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'));
         
         $this->assertEquals("blog/2009/10/blog-post-title", $url);
     }
@@ -55,7 +55,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
                 ->defaults(array('dir' => 'blog'));
         
         // Do not supply 'dir', expect the defined default 'dir' => 'blog' in the route definition to fill it in
-        $url = $router->url(array('year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'), 'blog_post_x');
+        $url = $router->url('blog_post_x', array('year' => 2009, 'month' => '10', 'slug' => 'blog-post-title'));
         
         $this->assertEquals("blog/2009/10/blog-post-title", $url);
     }
@@ -67,7 +67,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         
         try {
             // Do not supply 'dir' or 'slug', expect exception to be raised
-            $url = $router->url(array('year' => 2009, 'month' => '10'), 'blog_post');
+            $url = $router->url('blog_post', array('year' => 2009, 'month' => '10'));
         } catch(Exception $e) {
             return;
         }
@@ -82,11 +82,11 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
                 ->defaults(array('format' => 'html'));
         
         // Use default format
-        $url = $this->router->url(array('action' => 'new'), 'index_action');
+        $url = $this->router->url('index_action', array('action' => 'new'));
         $this->assertEquals("new.html", $url);
         
         // Use custom format
-        $url = $this->router->url(array('action' => 'new', 'format' => 'xml'), 'index_action');
+        $url = $this->router->url('index_action', array('action' => 'new', 'format' => 'xml'));
         $this->assertEquals("new.xml", $url);
     }
     
@@ -97,15 +97,15 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
                 ->defaults(array('format' => 'html'));
         
         // Use default format (URL should not have '.html', because it is not set and it is default)
-        $url = $this->router->url(array('controller' => 'events'), 'test');
+        $url = $this->router->url('test', array('controller' => 'events'));
         $this->assertEquals("events", $url);
         
         // Use default format (URL SHOULD have '.html', because it is set)
-        $url = $this->router->url(array('controller' => 'events', 'format' => 'html'), 'test');
+        $url = $this->router->url('test', array('controller' => 'events', 'format' => 'html'));
         $this->assertEquals("events.html", $url);
         
         // Use custom format (URL SHOULD have '.xml' because it IS set and it IS NOT default)
-        $url = $this->router->url(array('controller' => 'events', 'format' => 'xml'), 'test');
+        $url = $this->router->url('test', array('controller' => 'events', 'format' => 'xml'));
         $this->assertEquals("events.xml", $url);
     }
     
@@ -128,7 +128,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         $router = $this->router;
         $router->route('match', '<:match>');
         
-        $url = $router->url(array('match' => 'blog post'), 'match');
+        $url = $router->url('match', array('match' => 'blog post'));
         
         $this->assertEquals("blog+post", $url);
     }
