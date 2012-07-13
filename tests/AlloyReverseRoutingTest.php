@@ -59,20 +59,16 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         
         $this->assertEquals("blog/2009/10/blog-post-title", $url);
     }
-    
+
+	/**
+	 * @expectedException \UnexpectedValueException
+	 */
     public function testUrlBlogPostException()
     {
         $router = $this->router;
         $router->route('blog_post', '<:dir>/<#year>/<#month>/<:slug>');
-        
-        try {
-            // Do not supply 'dir' or 'slug', expect exception to be raised
-            $url = $router->url('blog_post', array('year' => 2009, 'month' => '10'));
-        } catch(Exception $e) {
-            return;
-        }
-        
-        $this->fail("Expected exception, none raised.");
+
+		$router->url('blog_post', array('year' => 2009, 'month' => '10'));
     }
     
     public function testUrlOptionalParamsNotInUrlWhenValueNotSet()
