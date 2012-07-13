@@ -103,7 +103,7 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         
         // Get static URL with no parameters
         $url = $this->router->url('login');
-        $this->assertEquals("user/login", $url);
+        $this->assertEquals("/user/login", $url);
     }
     
     

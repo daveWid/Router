@@ -78,7 +78,7 @@ class AlloyRouterTest extends \PHPUnit_Framework_TestCase
             
         $route = $router->route('url', '<*url>');
         $params = $router->match("GET", "/blog/2009/10/27/my-post-title");
-        $this->assertEquals('blog/2009/10/27/my-post-title', $params['url']);
+        $this->assertEquals('/blog/2009/10/27/my-post-title', $params['url']);
     }
     
     public function testRouteWildcard2()
