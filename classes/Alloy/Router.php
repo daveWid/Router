@@ -21,7 +21,12 @@ class Router
 	/**
 	 * @var \Alloy\Route  The matched route.
 	 */
-	private $matchedRoute;
+	private $matchedRoute = null;
+
+	/**
+	 * @var string  The name of the matched route
+	 */
+	private $matchedRouteName = null;
 
 	/**
 	 * Connect route
@@ -88,6 +93,7 @@ class Router
 				}
 
 				$this->matchedRoute = $route;
+				$this->matchedRouteName = $name;
 				break;
 			}
 		}
@@ -125,6 +131,26 @@ class Router
 	}
 
 	/**
+	 * Alias of getMatchedRouteName()
+	 *
+	 * @return string
+	 */
+	public function matchedRoute()
+	{
+		return $this->getMatchedRoute();
+	}
+
+	/**
+	 * Alias of getMatchedRouteName()
+	 *
+	 * @return string
+	 */
+	public function matchedRouteName()
+	{
+		return $this->getMatchedRouteName();
+	}
+
+	/**
 	 * Return the last matched route
 	 *
 	 * @throws \LogicException  If no route is matched yet.
@@ -133,25 +159,29 @@ class Router
 	 */
 	public function getMatchedRoute()
 	{
-		if ($this->matchedRoute)
-		{
-			return $this->matchedRoute;
-		}
-		else
+		if ($this->matchedRoute === null)
 		{
 			throw new \LogicException("Unable to return last route matched - No route has been matched yet.");
 		}
+
+		return $this->matchedRoute;
 	}
 
 	/**
 	 * Return the name of the last matched route
 	 *
+	 * @throws \LogicException  If no route is matched yet.
+	 *
 	 * @return string
 	 */
 	public function getMatchedRouteName()
 	{
-		$route = $this->getMatchedRoute();
-		return $route->name();
+		if ($this->matchedRouteName === null)
+		{
+			throw new \LogicException("Unable to return last route matched - No route has been matched yet.");
+		}
+
+		return $this->matchedRouteName;
 	}
 
 	/**
@@ -183,6 +213,8 @@ class Router
 	public function reset()
 	{
 		$this->routes = array();
+		$this->matchedRoute = null;
+		$this->matchedRouteName = null;
 	}
 
 }
