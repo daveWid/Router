@@ -75,21 +75,6 @@ class AlloyReverseRoutingTest extends \PHPUnit_Framework_TestCase
         $this->fail("Expected exception, none raised.");
     }
     
-    public function testUrlRemoveEscapeCharacters()
-    {
-        // Route with escape character before the dot '.'
-        $this->router->route('index_action', '<:action>\.<:format>')
-                ->defaults(array('format' => 'html'));
-        
-        // Use default format
-        $url = $this->router->url('index_action', array('action' => 'new'));
-        $this->assertEquals("new.html", $url);
-        
-        // Use custom format
-        $url = $this->router->url('index_action', array('action' => 'new', 'format' => 'xml'));
-        $this->assertEquals("new.xml", $url);
-    }
-    
     public function testUrlOptionalParamsNotInUrlWhenValueNotSet()
     {
         // Route with escape character before the dot '.'
