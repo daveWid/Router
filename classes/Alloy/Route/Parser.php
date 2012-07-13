@@ -61,13 +61,11 @@ class Parser
 		}
 
 		// Extract named parameters from route
-		$regexMatches = array();
-		preg_match_all(self::REGEX_ROUTE_PARAM, $regex, $regexMatches, PREG_SET_ORDER);
+		$regexMatches = self::parseParams($regex);
 
 		foreach ($regexMatches as $match)
 		{
-			list($token, $type, $name) = $match;
-			$regex = str_replace($token, self::getRegex($type, $name), $regex);
+			$regex = str_replace($match['token'], self::getRegex($match), $regex);
 		}
 
 		return '/^'.str_replace('/', '\/', $regex).'$/';
@@ -85,39 +83,63 @@ class Parser
 	}
 
 	/**
-	 * Gets the regex string for the given type
+	 * Parse a regex string into an array of normalized matches.
 	 *
-	 * @param  string  $type      The type of regex
-	 * @param  string  $name      The name of the token
-	 * @param  string  $prefix    Any route prefix (/ or something similar...)
-	 * @return string             The regex string
+	 * @param  string $regex  The regular expression string
+	 * @return array          An array of arrays with token, type, name and regex params
 	 */
-	private static function getRegex($type, $name, $prefix = "")
+	public static function parseParams($regex)
 	{
-		$group = "";
+		$matches = array();
+		preg_match_all(self::REGEX_ROUTE_PARAM, $regex, $matches, PREG_SET_ORDER);
 
-		switch ($type)
+		$found = array();
+		foreach ($matches as $match)
+		{
+			$add = array(
+				'token' => $match[0],
+				'type' => $match[1],
+				'name' => $match[2],
+				'regex' => ""
+			);
+
+			if (strpos($add['name'], "|") !== false)
+			{
+				list($add['name'], $add['regex']) = explode("|", $add['name']);
+			}
+
+			$found[] = $add;
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Builds the regex string for the match
+	 *
+	 * @param  array  $match   The match array
+	 * @return string          The regex string
+	 */
+	private static function getRegex(array $match)
+	{
+		switch ($match['type'])
 		{
 			case "#":
-				$group = self::REGEX_NUMERIC;
+				$match['regex'] = self::REGEX_NUMERIC;
 			break;
 			case "*":
-				$group = self::REGEX_WILDCARD;
+				$match['regex'] = self::REGEX_WILDCARD;
 			break;
 			default:
-				if (strpos($name, '|') !== false)
+				if ($match['regex'] === "")
 				{
-					list($name, $group) = explode("|", $name);
-				}
-				else
-				{
-					$group = self::REGEX_KEYS;
+					$match['regex'] = self::REGEX_KEYS;
 				}
 		}
 
-		$regex = "(?P<{$name}>{$prefix}{$group})";
+		$regex = "(?P<{$match['name']}>{$match['regex']})";
 
-		self::$namedParams[] = $name;
+		self::$namedParams[] = $match['name'];
 		return $regex;
 	}
 
