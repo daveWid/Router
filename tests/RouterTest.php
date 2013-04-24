@@ -74,6 +74,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 		$this->assertEquals($expected, $params);
 	}
 
+	public function testAdvancedRegex()
+	{
+		$router = new \Alloy\Router;
+		$router->route('regex', '/api/<:controller|first|second|third|fourth>(/<#id>)');
+
+		$this->assertNotEmpty($router->match("GET", '/api/first'));
+		$this->assertNotEmpty($router->match("GET", '/api/fourth/2'));
+		$this->assertEmpty($router->match("GET", '/fifth'));
+	}
+
 	public function testEmptyParamsWithNoMatchingRoutes()
 	{
 		$params = $this->router->match("GET", "/");

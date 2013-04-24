@@ -105,7 +105,7 @@ class Parser
 
 			if (strpos($add['name'], "|") !== false)
 			{
-				list($add['name'], $add['regex']) = explode("|", $add['name']);
+				list($add['name'], $add['regex']) = explode("|", $add['name'], 2);
 			}
 
 			$found[] = $add;
